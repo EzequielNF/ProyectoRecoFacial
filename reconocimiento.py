@@ -3,6 +3,9 @@ from PIL import Image
 import cv2
 import face_recognition
 import numpy as np
+import uuid
+import requests
+import json
 
 carpeta_autorizados = "autorizados"
 
@@ -28,9 +31,8 @@ def cargar_rostros_autorizados():
         if archivo.lower().endswith("_ok.jpg"):
             ruta = os.path.join(carpeta_autorizados, archivo)
             try:
-                # Cargar con PIL y convertir a RGB
                 imagen_pil = Image.open(ruta).convert("RGB")
-                imagen = np.array(imagen_pil)  # Convertir a NumPy array
+                imagen = np.array(imagen_pil)
                 codificacion = face_recognition.face_encodings(imagen)
                 if codificacion:
                     codificaciones.append(codificacion[0])
@@ -70,7 +72,7 @@ def reconocimiento_en_vivo(codificaciones_autorizadas, nombres_autorizados):
                 if coincidencias[mejor_match]:
                     nombre = nombres_autorizados[mejor_match]
 
-            y1, x2, y2, x1 = [v * 4 for v in ubicacion]  # volver a escala original
+            y1, x2, y2, x1 = [v * 4 for v in ubicacion]
             color = (0, 255, 0) if nombre != "Desconocido" else (0, 0, 255)
 
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
@@ -79,21 +81,39 @@ def reconocimiento_en_vivo(codificaciones_autorizadas, nombres_autorizados):
             if nombre != "Desconocido":
                 print(f"[✅] Acceso permitido a: {nombre}")
                 acceso_permitido = True
-                break  # Ya encontró a alguien autorizado, puede salir del ciclo
+
+                # Guardar foto del rostro
+                if not os.path.exists("logs"):
+                    os.makedirs("logs")
+                nombre_archivo = f"{uuid.uuid4().hex}.jpg"
+                ruta_archivo = f"logs/{nombre_archivo}"
+                cv2.imwrite(ruta_archivo, frame)
+
+                # Enviar a la página web
+                params = {
+                    'nombre': nombre,
+                    'imagen': nombre_archivo
+                }
+                try:
+                    with open("ultimo_acceso.json","w") as f:
+                        json.dump({"nombre":nombre,"imagen":nombre_archivo}, f)
+                except:
+                    print("[!] No se pudo contactar con la web")
+
+                cv2.imshow("Reconocimiento Facial Condominio", frame)
+                cv2.waitKey(2000)  # Mostrar por 2 segundos
+                break
 
         cv2.imshow("Reconocimiento Facial Condominio", frame)
 
         if acceso_permitido:
-            cv2.waitKey(2000)  # Espera 2 segundos para mostrar el cuadro
             break
-
         if cv2.waitKey(1) & 0xFF == ord('q'):
             print("Saliendo...")
             break
 
     cap.release()
     cv2.destroyAllWindows()
-
 
 if __name__ == "__main__":
     convertir_imagenes_rgb()

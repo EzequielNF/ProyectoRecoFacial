@@ -2,3 +2,4 @@ pip install opencv-contrib-pyhton
 pip install face-recognition
 pip install flask
 pip install numpy==1.23.5
+pip install requests

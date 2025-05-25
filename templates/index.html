@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>🔐 Acceso Autorizado</title>
+    <meta http-equiv="refresh" content="5">
+</head>
+<body>
+    <h1>🔐 Acceso Autorizado</h1>
+    {% if nombre and imagen %}
+        <p>Nombre reconocido: <strong>{{ nombre }}</strong></p>
+        <img src="{{ url_for('autorizados', filename=imagen) }}" alt="Foto de {{ nombre }}" width="400">
+    {% else %}
+        <p>Esperando escaneo facial...</p>
+    {% endif %}
+</body>
+</html>
